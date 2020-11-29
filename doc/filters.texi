@@ -523,9 +523,49 @@ The filter accepts the following options:
 Set split frequencies. Those must be positive and increasing.
 
 @item order
-Set filter order, can be @var{2nd}, @var{4th} or @var{8th}.
-Default is @var{4th}.
+Set filter order. Available values are:
+
+@table @samp
+@item 2nd
+@item 4th
+@item 6th
+@item 8th
+@item 10th
+@item 12th
+@item 14th
+@item 16th
+@item 18th
+@item 20th
 @end table
+
+Default is @var{4th}.
+
+@item level
+Set input gain level. Allowed range is from 0 to 1. Default value is 1.
+@end table
+
+@subsection Examples
+
+@itemize
+@item
+Split input audio stream into two bands (low and high) with split frequency of 1500 Hz,
+each band will be in separate stream:
+@example
+ffmpeg -i in.flac -filter_complex 'acrossover=split=1500[LOW][HIGH]' -map '[LOW]' low.wav -map '[HIGH]' high.wav
+@end example
+
+@item
+Same as above, but with higher filter order:
+@example
+ffmpeg -i in.flac -filter_complex 'acrossover=split=1500:order=8th[LOW][HIGH]' -map '[LOW]' low.wav -map '[HIGH]' high.wav
+@end example
+
+@item
+Same as above, but also with additional middle band (frequencies between 1500 and 8000):
+@example
+ffmpeg -i in.flac -filter_complex 'acrossover=split=1500 8000:order=8th[LOW][MID][HIGH]' -map '[LOW]' low.wav -map '[MID]' mid.wav -map '[HIGH]' high.wav
+@end example
+@end itemize
 
 @section acrusher
 
@@ -734,6 +774,8 @@ adelay=delays=64S:all=1
 @section adenorm
 Remedy denormals in audio by adding extremely low-level noise.
 
+This filter shall be placed before any filter that can produce denormals.
+
 A description of the accepted parameters follows.
 
 @table @option
@@ -757,6 +799,10 @@ Add pulse signal.
 
 Default is @code{dc}.
 @end table
+
+@subsection Commands
+
+This filter supports the all above options as @ref{commands}.
 
 @section aderivative, aintegral
 
@@ -869,6 +915,10 @@ select 50µs (FM-KF).
 select 75µs (FM-KF).
 @end table
 @end table
+
+@subsection Commands
+
+This filter supports the all above options as @ref{commands}.
 
 @section aeval
 
@@ -1012,6 +1062,10 @@ select double-exponential seat
 select double-exponential sigmoid
 @item losi
 select logistic sigmoid
+@item sinc
+select sine cardinal function
+@item isinc
+select inverted sine cardinal function
 @item nofade
 no fade applied
 @end table
@@ -1432,10 +1486,10 @@ It accepts the following parameters:
 
 @table @option
 @item zeros, z
-Set numerator/zeros coefficients.
+Set B/numerator/zeros/reflection coefficients.
 
 @item poles, p
-Set denominator/poles coefficients.
+Set A/denominator/poles/ladder coefficients.
 
 @item gains, k
 Set channels gains.
@@ -1450,6 +1504,8 @@ Set output gain.
 Set coefficients format.
 
 @table @samp
+@item ll
+lattice-ladder function
 @item sf
 analog transfer function
 @item tf
@@ -1818,7 +1874,7 @@ Set central frequency for band.
 If input doesn't have that frequency the entry is ignored.
 
 @item w
-Set band width in hertz.
+Set band width in Hertz.
 
 @item g
 Set band gain in dB.
@@ -1883,7 +1939,7 @@ Syntax for the commands is : "@var{fN}|f=@var{freq}|w=@var{width}|g=@var{gain}"
 @var{fN} is existing filter number, starting from 0, if no such filter is available
 error is returned.
 @var{freq} set new frequency parameter.
-@var{width} set new width parameter in herz.
+@var{width} set new width parameter in Hertz.
 @var{gain} set new gain parameter in dB.
 
 Full filter invocation with asendcmd may look like this:
@@ -1935,16 +1991,7 @@ Set smooth factor. Default value is @var{11}. Allowed range is from @var{1} to @
 
 @subsection Commands
 
-This filter supports the following commands:
-@table @option
-@item s
-Change denoise strength. Argument is single float number.
-Syntax for the command is : "@var{s}"
-
-@item o
-Change output mode.
-Syntax for the command is : "i", "o" or "n" string.
-@end table
+This filter supports the all above options as @ref{commands}.
 
 @section anlms
 Apply Normalized Least-Mean-Squares algorithm to the first audio stream using the second audio stream.
@@ -2356,6 +2403,9 @@ It accepts the following values:
 
 @item param
 Set additional parameter which controls sigmoid function.
+
+@item oversample
+Set oversampling factor.
 @end table
 
 @subsection Commands
@@ -2555,11 +2605,11 @@ The filter accepts the following options:
 @table @option
 @item dry
 Set dry gain, how much of original signal is kept. Allowed range is from 0 to 1.
-Default value is 0.5.
+Default value is 0.7.
 
 @item wet
 Set wet gain, how much of filtered signal is kept. Allowed range is from 0 to 1.
-Default value is 0.8.
+Default value is 0.7.
 
 @item decay
 Set delay line decay gain value. Allowed range is from 0 to 1.
@@ -2567,10 +2617,10 @@ Default value is 0.7.
 
 @item feedback
 Set delay line feedback gain value. Allowed range is from 0 to 1.
-Default value is 0.5.
+Default value is 0.9.
 
 @item cutoff
-Set cutoff frequency in herz. Allowed range is 50 to 900.
+Set cutoff frequency in Hertz. Allowed range is 50 to 900.
 Default value is 100.
 
 @item slope
@@ -2580,6 +2630,25 @@ Default value is 0.5.
 @item delay
 Set delay. Allowed range is from 1 to 100.
 Default value is 20.
+@end table
+
+@subsection Commands
+
+This filter supports the all above options as @ref{commands}.
+
+@section asupercut
+Cut super frequencies.
+
+The filter accepts the following options:
+
+@table @option
+@item cutoff
+Set cutoff frequency in Hertz. Allowed range is 20000 to 192000.
+Default value is 20000.
+
+@item order
+Set filter order. Available values are from 3 to 20.
+Default value is 10.
 @end table
 
 @subsection Commands
@@ -5273,6 +5342,69 @@ and also with custom gain:
 @end example
 @end itemize
 
+@section speechnorm
+Speech Normalizer.
+
+This filter expands or compresses each half-cycle of audio samples
+(local set of samples all above or all below zero and between two nearest zero crossings) depending
+on threshold value, so audio reaches target peak value under conditions controlled by below options.
+
+The filter accepts the following options:
+
+@table @option
+@item peak, p
+Set the expansion target peak value. This specifies the highest allowed absolute amplitude
+level for the normalized audio input. Default value is 0.95. Allowed range is from 0.0 to 1.0.
+
+@item expansion, e
+Set the maximum expansion factor. Allowed range is from 1.0 to 50.0. Default value is 2.0.
+This option controls maximum local half-cycle of samples expansion. The maximum expansion
+would be such that local peak value reaches target peak value but never to surpass it and that
+ratio between new and previous peak value does not surpass this option value.
+
+@item compression, c
+Set the maximum compression factor. Allowed range is from 1.0 to 50.0. Default value is 2.0.
+This option controls maximum local half-cycle of samples compression. This option is used
+only if @option{threshold} option is set to value greater than 0.0, then in such cases
+when local peak is lower or same as value set by @option{threshold} all samples belonging to
+that peak's half-cycle will be compressed by current compression factor.
+
+@item threshold, t
+Set the threshold value. Default value is 0.0. Allowed range is from 0.0 to 1.0.
+This option specifies which half-cycles of samples will be compressed and which will be expanded.
+Any half-cycle samples with their local peak value below or same as this option value will be
+compressed by current compression factor, otherwise, if greater than threshold value they will be
+expanded with expansion factor so that it could reach peak target value but never surpass it.
+
+@item raise, r
+Set the expansion raising amount per each half-cycle of samples. Default value is 0.001.
+Allowed range is from 0.0 to 1.0. This controls how fast expansion factor is raised per
+each new half-cycle until it reaches @option{expansion} value.
+Setting this options too high may lead to distortions.
+
+@item fall, f
+Set the compression raising amount per each half-cycle of samples. Default value is 0.001.
+Allowed range is from 0.0 to 1.0. This controls how fast compression factor is raised per
+each new half-cycle until it reaches @option{compression} value.
+
+@item channels, h
+Specify which channels to filter, by default all available channels are filtered.
+
+@item invert, i
+Enable inverted filtering, by default is disabled. This inverts interpretation of @option{threshold}
+option. When enabled any half-cycle of samples with their local peak value below or same as
+@option{threshold} option will be expanded otherwise it will be compressed.
+
+@item link, l
+Link channels when calculating gain applied to each filtered channel sample, by default is disabled.
+When disabled each filtered channel gain calculation is independent, otherwise when this option
+is enabled the minimum of all possible gains for each filtered channel is used.
+@end table
+
+@subsection Commands
+
+This filter supports the all above options as @ref{commands}.
+
 @section stereotools
 
 This filter has some handy utilities to manage stereo signals, for converting
@@ -6682,7 +6814,7 @@ Alternatively can be set to @code{s} serial.
 
 Parallel can be faster then serial, while other way around is never true.
 Parallel will abort early on first change being greater then thresholds, while serial
-will continue processing other side of frames if they are equal or bellow thresholds.
+will continue processing other side of frames if they are equal or below thresholds.
 @end table
 
 @subsection Commands
@@ -9349,6 +9481,10 @@ Controls brightness of spill area, preserving colors.
 Modify alpha from generated spillmap.
 @end table
 
+@subsection Commands
+
+This filter supports the all above options as @ref{commands}.
+
 @section detelecine
 
 Apply an exact inverse of the telecine operation. It requires a predefined
@@ -11718,6 +11854,10 @@ frei0r=perspective:0.2/0.2|0.8/0.2
 
 For more information, see
 @url{http://frei0r.dyne.org}
+
+@subsection Commands
+
+This filter supports the @option{filter_params} option as @ref{commands}.
 
 @section fspp
 
@@ -14742,7 +14882,7 @@ testsrc=s=100x100, split=4 [in0][in1][in2][in3];
 
 Overlay one video on top of another.
 
-This is the CUDA cariant of the @ref{overlay} filter.
+This is the CUDA variant of the @ref{overlay} filter.
 It only accepts CUDA frames. The underlying input pixel formats have to match.
 
 It takes two inputs and has one output. The first input is the "main"
@@ -15838,6 +15978,10 @@ Enable checking the parity bit. In the event of a parity error, the filter will 
 @item lp
 Lowpass lines prior to further processing. Default is enabled.
 @end table
+
+@subsection Commands
+
+This filter supports the all above options as @ref{commands}.
 
 @subsection Examples
 
@@ -20647,6 +20791,8 @@ Set one of available transition effects:
 @item wipetr
 @item wipebl
 @item wipebr
+@item squeezeh
+@item squeezev
 @end table
 Default transition effect is fade.
 
@@ -25081,6 +25227,16 @@ Default is @code{combined}.
 @item minamp
 Set minimum amplitude used in @code{log} amplitude scaler.
 
+@item data
+Set data display mode.
+
+It accepts the following values:
+@table @samp
+@item magnitude
+@item phase
+@item delay
+@end table
+Default is @code{magnitude}.
 @end table
 
 @section showspatial

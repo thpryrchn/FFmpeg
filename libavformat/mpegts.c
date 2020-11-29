@@ -609,8 +609,9 @@ static int get_packet_size(AVFormatContext* s)
     /*init buffer to store stream for probing */
     uint8_t buf[PROBE_PACKET_MAX_BUF] = {0};
     int buf_size = 0;
+    int max_iterations = 16;
 
-    while (buf_size < PROBE_PACKET_MAX_BUF) {
+    while (buf_size < PROBE_PACKET_MAX_BUF && max_iterations--) {
         ret = avio_read_partial(s->pb, buf + buf_size, PROBE_PACKET_MAX_BUF - buf_size);
         if (ret < 0)
             return AVERROR_INVALIDDATA;
@@ -2355,7 +2356,7 @@ static void pmt_cb(MpegTSFilter *filter, const uint8_t *section, int section_len
         goto out;
 
     // stop parsing after pmt, we found header
-    if (!ts->stream->nb_streams)
+    if (!ts->pkt)
         ts->stop_parse = 2;
 
     set_pmt_found(ts, h->id);

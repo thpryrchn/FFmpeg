@@ -53,7 +53,6 @@
 
 /* Default timeout values for read packet in seconds  */
 #define READ_PACKET_TIMEOUT_S 10
-#define SDP_MAX_SIZE 16384
 #define RECVBUF_SIZE 10 * RTP_MAX_PACKET_LENGTH
 #define DEFAULT_REORDERING_DELAY 100000
 
@@ -688,15 +687,7 @@ int ff_sdp_parse(AVFormatContext *s, const char *content)
 {
     const char *p;
     int letter, i;
-    /* Some SDP lines, particularly for Realmedia or ASF RTSP streams,
-     * contain long SDP lines containing complete ASF Headers (several
-     * kB) or arrays of MDPR (RM stream descriptor) headers plus
-     * "rulebooks" describing their properties. Therefore, the SDP line
-     * buffer is large.
-     *
-     * The Vorbis FMTP line can be up to 16KB - see xiph_parse_sdp_line
-     * in rtpdec_xiph.c. */
-    char buf[16384], *q;
+    char buf[SDP_MAX_SIZE], *q;
     SDPParseState sdp_parse_state = { { 0 } }, *s1 = &sdp_parse_state;
 
     p = content;
@@ -1229,7 +1220,8 @@ start:
         content = av_malloc(content_length + 1);
         if (!content)
             return AVERROR(ENOMEM);
-        ffurl_read_complete(rt->rtsp_hd, content, content_length);
+        if (ffurl_read_complete(rt->rtsp_hd, content, content_length) != content_length)
+            return AVERROR(EIO);
         content[content_length] = '\0';
     }
     if (content_ptr)
@@ -1991,7 +1983,7 @@ static int udp_read_packet(AVFormatContext *s, RTSPStream **prtsp_st,
     int runs = rt->initial_timeout * 1000LL / POLLING_TIME;
 
     if (!p) {
-        p = rt->p = av_malloc_array(2 * rt->nb_rtsp_streams + 1, sizeof(struct pollfd));
+        p = rt->p = av_malloc_array(2 * rt->nb_rtsp_streams + 1, sizeof(*p));
         if (!p)
             return AVERROR(ENOMEM);
 
@@ -2255,9 +2247,7 @@ redo:
                     s->start_time_realtime = av_rescale (rtpctx->first_rtcp_ntp_time - (NTP_OFFSET << 32), 1000000, 1LL << 32);
                     if (rtpctx->st) {
                         s->start_time_realtime -=
-                            av_rescale (rtpctx->rtcp_ts_offset,
-                                        (uint64_t) rtpctx->st->time_base.num * 1000000,
-                                                   rtpctx->st->time_base.den);
+                            av_rescale_q (rtpctx->rtcp_ts_offset, rtpctx->st->time_base, AV_TIME_BASE_Q);
                     }
                 }
             }
@@ -2347,11 +2337,14 @@ static int sdp_read_header(AVFormatContext *s)
     /* read the whole sdp file */
     /* XXX: better loading */
     content = av_malloc(SDP_MAX_SIZE);
-    if (!content)
+    if (!content) {
+        ff_network_close();
         return AVERROR(ENOMEM);
+    }
     size = avio_read(s->pb, content, SDP_MAX_SIZE - 1);
     if (size <= 0) {
         av_free(content);
+        ff_network_close();
         return AVERROR_INVALIDDATA;
     }
     content[size] ='\0';
@@ -2503,6 +2496,7 @@ static int rtp_read_header(AVFormatContext *s)
         av_log(s, AV_LOG_ERROR, "Unable to receive RTP payload type %d "
                                 "without an SDP file describing it\n",
                                  payload_type);
+        ret = AVERROR_INVALIDDATA;
         goto fail;
     }
     if (par->codec_type != AVMEDIA_TYPE_DATA) {
@@ -2549,7 +2543,9 @@ static int rtp_read_header(AVFormatContext *s)
     ffio_init_context(&pb, sdp.str, sdp.len, 0, NULL, NULL, NULL, NULL);
     s->pb = &pb;
 
-    /* sdp_read_header initializes this again */
+    /* if sdp_read_header() fails then following ff_network_close() cancels out */
+    /* ff_network_init() at the start of this function. Otherwise it cancels out */
+    /* ff_network_init() inside sdp_read_header() */
     ff_network_close();
 
     rt->media_type_mask = (1 << (AVMEDIA_TYPE_SUBTITLE+1)) - 1;

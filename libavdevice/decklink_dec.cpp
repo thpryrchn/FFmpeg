@@ -945,13 +945,13 @@ HRESULT decklink_input_callback::VideoInputFrameArrived(
 
             if (videoFrame->GetAncillaryData(&vanc) == S_OK) {
                 int i;
-                int64_t line_mask = 1;
                 BMDPixelFormat vanc_format = vanc->GetPixelFormat();
                 txt_buf[0] = 0x10;    // data_identifier - EBU_data
                 txt_buf++;
 #if CONFIG_LIBZVBI
                 if (ctx->bmd_mode == bmdModePAL && ctx->teletext_lines &&
                     (vanc_format == bmdFormat8BitYUV || vanc_format == bmdFormat10BitYUV)) {
+                    int64_t line_mask = 1;
                     av_assert0(videoFrame->GetWidth() == 720);
                     for (i = 6; i < 336; i++, line_mask <<= 1) {
                         uint8_t *buf;
@@ -1152,7 +1152,8 @@ av_cold int ff_decklink_read_header(AVFormatContext *avctx)
     ctx->video_pts_source = cctx->video_pts_source;
     ctx->draw_bars = cctx->draw_bars;
     ctx->audio_depth = cctx->audio_depth;
-    ctx->raw_format = (BMDPixelFormat)cctx->raw_format;
+    if (cctx->raw_format > 0 && (unsigned int)cctx->raw_format < FF_ARRAY_ELEMS(decklink_raw_format_map))
+        ctx->raw_format = decklink_raw_format_map[cctx->raw_format];
     cctx->ctx = ctx;
 
     /* Check audio channel option for valid values: 2, 8 or 16 */

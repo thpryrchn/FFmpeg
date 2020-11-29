@@ -625,6 +625,7 @@ OBJS-$(CONFIG_SONIC_DECODER)           += sonic.o
 OBJS-$(CONFIG_SONIC_ENCODER)           += sonic.o
 OBJS-$(CONFIG_SONIC_LS_ENCODER)        += sonic.o
 OBJS-$(CONFIG_SPEEDHQ_DECODER)         += speedhq.o mpeg12.o mpeg12data.o simple_idct.o
+OBJS-$(CONFIG_SPEEDHQ_ENCODER)         += speedhq.o mpeg12data.o speedhqenc.o
 OBJS-$(CONFIG_SP5X_DECODER)            += sp5xdec.o
 OBJS-$(CONFIG_SRGC_DECODER)            += mscc.o
 OBJS-$(CONFIG_SRT_DECODER)             += srtdec.o ass.o htmlsubtitles.o
@@ -912,6 +913,9 @@ OBJS-$(CONFIG_VAAPI)                      += vaapi_decode.o
 OBJS-$(CONFIG_VIDEOTOOLBOX)               += videotoolbox.o
 OBJS-$(CONFIG_VDPAU)                      += vdpau.o
 
+OBJS-$(CONFIG_AV1_D3D11VA_HWACCEL)        += dxva2_av1.o
+OBJS-$(CONFIG_AV1_DXVA2_HWACCEL)          += dxva2_av1.o
+OBJS-$(CONFIG_AV1_NVDEC_HWACCEL)          += nvdec_av1.o
 OBJS-$(CONFIG_AV1_VAAPI_HWACCEL)          += vaapi_av1.o
 OBJS-$(CONFIG_H263_VAAPI_HWACCEL)         += vaapi_mpeg4.o
 OBJS-$(CONFIG_H263_VIDEOTOOLBOX_HWACCEL)  += videotoolbox.o
