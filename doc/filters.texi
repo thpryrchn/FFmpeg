@@ -3149,6 +3149,9 @@ kHz
 @item width, w
 Determine how steep is the filter's shelf transition.
 
+@item poles, p
+Set number of poles. Default is 2.
+
 @item mix, m
 How much to use filtered signal in output. Default is 1.
 Range is between 0 and 1.
@@ -6049,6 +6052,9 @@ kHz
 
 @item width, w
 Determine how steep is the filter's shelf transition.
+
+@item poles, p
+Set number of poles. Default is 2.
 
 @item mix, m
 How much to use filtered signal in output. Default is 1.
@@ -13550,6 +13556,10 @@ Upper bound. Defaults to the highest allowed value for the input.
 @item planes
 Specify which planes will be processed. Defaults to all available.
 @end table
+
+@subsection Commands
+
+This filter supports the all above options as @ref{commands}.
 
 @section loop
 
